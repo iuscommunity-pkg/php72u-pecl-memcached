@@ -1,11 +1,6 @@
-clog
-package*xml
-/memcached-2.0.0.tgz
-/memcached-2.0.1.tgz
-/memcached-2.1.0.tgz
-/memcached-2.2.0.tgz
-/php-memcached-3.0.0-6ace07d.tar.gz
-/memcached-3.0.1.tgz
-/memcached-3.0.2.tgz
-/memcached-3.0.3.tgz
-/memcached-3.0.4.tgz
+BUILD
+BUILDROOT
+MOCK
+RPMS
+SOURCES/*.tgz
+SRPMS
