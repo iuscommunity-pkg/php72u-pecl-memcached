@@ -21,13 +21,12 @@
 Summary:      Extension to work with the Memcached caching daemon
 Name:         %{php}-pecl-%{pecl_name}
 Version:      3.0.4
-Release:      1.ius%{?dist}
+Release:      2.ius%{?dist}
 License:      PHP
 Group:        Development/Languages
 URL:          https://pecl.php.net/package/%{pecl_name}
 Source0:      https://pecl.php.net/get/%{pecl_name}-%{version}.tgz
 
-BuildRequires: pecl >= 1.10.0
 BuildRequires: %{php}-devel
 BuildRequires: %{php}-json
 BuildRequires: %{php}-pecl-igbinary-devel
@@ -41,8 +40,13 @@ BuildRequires: fastlz-devel
 BuildRequires: memcached
 %endif
 
-Requires(post): pecl >= 1.10.0
-Requires(postun): pecl >= 1.10.0
+BuildRequires:  pear1u
+# explicitly require pear dependencies to avoid conflicts
+BuildRequires:  %{php}-cli
+BuildRequires:  %{php}-common
+BuildRequires:  %{php}-process
+BuildRequires:  %{php}-xml
+
 Requires:     %{php}-json%{?_isa}
 Requires:     %{php}-pecl-igbinary%{?_isa}
 Requires:     php(zend-abi) = %{php_zend_api}
@@ -240,12 +244,20 @@ exit $ret
 %endif
 
 
-%post
-%{pecl_install} %{pecl_xmldir}/%{pecl_name}.xml >/dev/null || :
+%triggerin -- pear1u
+if [ -x %{__pecl} ]; then
+    %{pecl_install} %{pecl_xmldir}/%{pecl_name}.xml >/dev/null || :
+fi
+
+
+%posttrans
+if [ -x %{__pecl} ]; then
+    %{pecl_install} %{pecl_xmldir}/%{pecl_name}.xml >/dev/null || :
+fi
 
 
 %postun
-if [ $1 -eq 0 ]; then
+if [ $1 -eq 0 -a -x %{__pecl} ]; then
     %{pecl_uninstall} %{pecl_name} >/dev/null || :
 fi
 
@@ -265,6 +277,9 @@ fi
 
 
 %changelog
+* Thu Feb 01 2018 Carl George <carl@george.computer> - 3.0.4-2.ius
+- Remove pear requirement and update scriptlets (adapted from remirepo)
+
 * Thu Jan 25 2018 Ben Harper <ben.harper@rackspace.com> - 3.0.4-1.ius
 - port from fedora
 
