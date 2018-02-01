@@ -9,13 +9,13 @@
 # Please, preserve the changelog entries
 #
 
-%global with_zts    0%{!?_without_zts:%{?__ztsphp:1}}
-%global with_tests  0%{!?_without_tests:1}
 %global pecl_name   memcached
 # After 40-igbinary, 40-json, 40-msgpack
 %global ini_name    50-%{pecl_name}.ini
 %global php         php72u
 
+%bcond_without zts
+%bcond_without tests
 %bcond_with msgpack
 
 Summary:      Extension to work with the Memcached caching daemon
@@ -24,9 +24,8 @@ Version:      3.0.4
 Release:      1.ius%{?dist}
 License:      PHP
 Group:        Development/Languages
-URL:          http://pecl.php.net/package/%{pecl_name}
-
-Source0:      http://pecl.php.net/get/%{pecl_name}-%{version}.tgz
+URL:          https://pecl.php.net/package/%{pecl_name}
+Source0:      https://pecl.php.net/get/%{pecl_name}-%{version}.tgz
 
 BuildRequires: pecl >= 1.10.0
 BuildRequires: %{php}-devel
@@ -38,7 +37,7 @@ BuildRequires: libmemcached-devel >= 1.0.16
 BuildRequires: zlib-devel
 BuildRequires: cyrus-sasl-devel
 BuildRequires: fastlz-devel
-%if %{with_tests}
+%if %{with tests}
 BuildRequires: memcached
 %endif
 
@@ -74,7 +73,6 @@ Conflicts:    php-pecl-%{pecl_name} < %{version}
 %{?filter_setup}
 
 
-
 %description
 This extension uses libmemcached library to provide API for communicating
 with memcached servers.
@@ -88,7 +86,7 @@ It also provides a session handler (memcached).
 
 %prep
 %setup -c -q
-mv %{pecl_name}-%{version}%{?prever} NTS
+mv %{pecl_name}-%{version} NTS
 
 # Don't install/register tests
 sed -e 's/role="test"/role="src"/' \
@@ -98,16 +96,12 @@ sed -e 's/role="test"/role="src"/' \
 
 rm -r NTS/fastlz
 
-pushd NTS
-
 # Check version as upstream often forget to update this
-extver=$(sed -n '/#define PHP_MEMCACHED_VERSION/{s/.* "//;s/".*$//;p}' php_memcached.h)
-if test "x${extver}" != "x%{version}%{?gh_date:-dev}%{?intver}"; then
-   : Error: Upstream HTTP version is now ${extver}, expecting %{version}.
-   : Update the pdover macro and rebuild.
+extver=$(sed -n '/#define PHP_MEMCACHED_VERSION/{s/.* "//;s/".*$//;p}' NTS/php_memcached.h)
+if test "x${extver}" != "x%{version}"; then
+   : Error: Upstream version is ${extver}, expecting %{version}.
    exit 1
 fi
-popd
 
 cat > %{ini_name} << 'EOF'
 ; Enable %{pecl_name} extension module
@@ -136,7 +130,7 @@ cat NTS/memcached.ini >>%{ini_name}
 # See https://github.com/php-memcached-dev/php-memcached/issues/310 for more information.
 sed -e '/^memcached.sess_binary_protocol = / s|On|Off|' -i %{ini_name}
 
-%if %{with_zts}
+%if %{with zts}
 cp -r NTS ZTS
 %endif
 
@@ -154,14 +148,14 @@ peclconf() {
 pushd NTS
 %{_bindir}/phpize
 peclconf %{_bindir}/php-config
-make %{?_smp_mflags}
+%make_build
 popd
 
-%if %{with_zts}
+%if %{with zts}
 pushd ZTS
 %{_bindir}/zts-phpize
 peclconf %{_bindir}/zts-php-config
-make %{?_smp_mflags}
+%make_build
 popd
 %endif
 
@@ -169,26 +163,21 @@ popd
 %install
 # Install the NTS extension
 make install -C NTS INSTALL_ROOT=%{buildroot}
-
-# Drop in the bit of configuration
-# rename to z-memcached to be load after msgpack
 install -D -m 644 %{ini_name} %{buildroot}%{php_inidir}/%{ini_name}
 
 # Install XML package description
 install -D -m 644 package.xml %{buildroot}%{pecl_xmldir}/%{pecl_name}.xml
 
 # Install the ZTS extension
-%if %{with_zts}
+%if %{with zts}
 make install -C ZTS INSTALL_ROOT=%{buildroot}
 install -D -m 644 %{ini_name} %{buildroot}%{php_ztsinidir}/%{ini_name}
 %endif
 
 # Documentation
-pushd NTS
-for i in $(grep 'role="doc"' ../package.xml | sed -e 's/^.*name="//;s/".*$//')
-do install -Dpm 644 $i %{buildroot}%{pecl_docdir}/%{pecl_name}/$i
+for i in $(grep 'role="doc"' package.xml | sed -e 's/^.*name="//;s/".*$//')
+do install -D -p -m 644 NTS/$i %{buildroot}%{pecl_docdir}/%{pecl_name}/$i
 done
-popd
 
 
 %check
@@ -202,14 +191,14 @@ OPT="-n"
     -d extension=%{buildroot}%{php_extdir}/%{pecl_name}.so \
     --modules | grep %{pecl_name}
 
-%if %{with_zts}
+%if %{with zts}
 : Minimal load test for ZTS extension
 %{__ztsphp} $OPT \
     -d extension=%{buildroot}%{php_ztsextdir}/%{pecl_name}.so \
     --modules | grep %{pecl_name}
 %endif
 
-%if %{with_tests}
+%if %{with tests}
 # XFAIL and very slow so no value
 rm ?TS/tests/expire.phpt
 
@@ -224,18 +213,18 @@ sed -e "s/11211/$port/" -i ?TS/tests/*
 pushd NTS
 rm tests/flush_buffers.phpt tests/touch_binary.phpt
 TEST_PHP_EXECUTABLE=%{__php} \
-TEST_PHP_ARGS="$OPT -d extension=$PWD/modules/%{pecl_name}.so" \
+TEST_PHP_ARGS="$OPT -d extension=%{buildroot}%{php_extdir}/%{pecl_name}.so" \
 NO_INTERACTION=1 \
 REPORT_EXIT_STATUS=1 \
 %{__php} -n run-tests.php --show-diff || ret=1
 popd
 
-%if %{with_zts}
+%if %{with zts}
 : Run the upstream test Suite for ZTS extension
 pushd ZTS
 rm tests/flush_buffers.phpt tests/touch_binary.phpt
 TEST_PHP_EXECUTABLE=%{__ztsphp} \
-TEST_PHP_ARGS="$OPT -d extension=$PWD/modules/%{pecl_name}.so" \
+TEST_PHP_ARGS="$OPT -d extension=%{buildroot}%{php_ztsextdir}/%{pecl_name}.so" \
 NO_INTERACTION=1 \
 REPORT_EXIT_STATUS=1 \
 %{__ztsphp} -n run-tests.php --show-diff || ret=1
@@ -260,6 +249,7 @@ if [ $1 -eq 0 ]; then
     %{pecl_uninstall} %{pecl_name} >/dev/null || :
 fi
 
+
 %files
 %license NTS/LICENSE
 %doc %{pecl_docdir}/%{pecl_name}
@@ -268,7 +258,7 @@ fi
 %config(noreplace) %{php_inidir}/%{ini_name}
 %{php_extdir}/%{pecl_name}.so
 
-%if %{with_zts}
+%if %{with zts}
 %config(noreplace) %{php_ztsinidir}/%{ini_name}
 %{php_ztsextdir}/%{pecl_name}.so
 %endif
