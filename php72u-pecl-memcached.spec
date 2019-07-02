@@ -28,6 +28,8 @@ Source0:      https://pecl.php.net/get/%{pecl_name}-%{version}.tgz
 
 BuildRequires: gcc
 BuildRequires: %{php}-devel
+# build require pear1's dependencies to avoid mismatched php stacks
+BuildRequires: pear1 %{php}-cli %{php}-common %{php}-xml
 BuildRequires: %{php}-json
 BuildRequires: %{php}-pecl-igbinary-devel
 %{?with_msgpack:BuildRequires: %{php}-pecl-msgpack-devel}
@@ -39,13 +41,6 @@ BuildRequires: fastlz-devel
 %if %{with tests}
 BuildRequires: memcached
 %endif
-
-BuildRequires:  pear1u
-# explicitly require pear dependencies to avoid conflicts
-BuildRequires:  %{php}-cli
-BuildRequires:  %{php}-common
-BuildRequires:  %{php}-process
-BuildRequires:  %{php}-xml
 
 Requires:     %{php}-json%{?_isa}
 Requires:     %{php}-pecl-igbinary%{?_isa}
@@ -242,7 +237,7 @@ exit $ret
 %endif
 
 
-%triggerin -- pear1u
+%triggerin -- pear1
 if [ -x %{__pecl} ]; then
     %{pecl_install} %{pecl_xmldir}/%{pecl_name}.xml >/dev/null || :
 fi
@@ -277,6 +272,7 @@ fi
 %changelog
 * Tue Jul 02 2019 Carl George <carl@george.computer> - 3.1.3-1
 - Latest upstream
+- Switch from pear1u to pear1
 
 * Thu Feb 01 2018 Carl George <carl@george.computer> - 3.0.4-2.ius
 - Remove pear requirement and update scriptlets (adapted from remirepo)
