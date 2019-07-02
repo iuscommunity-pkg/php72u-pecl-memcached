@@ -20,13 +20,13 @@
 
 Summary:      Extension to work with the Memcached caching daemon
 Name:         %{php}-pecl-%{pecl_name}
-Version:      3.0.4
-Release:      2.ius%{?dist}
+Version:      3.1.3
+Release:      1%{?dist}
 License:      PHP
-Group:        Development/Languages
 URL:          https://pecl.php.net/package/%{pecl_name}
 Source0:      https://pecl.php.net/get/%{pecl_name}-%{version}.tgz
 
+BuildRequires: gcc
 BuildRequires: %{php}-devel
 BuildRequires: %{php}-json
 BuildRequires: %{php}-pecl-igbinary-devel
@@ -53,10 +53,6 @@ Requires:     php(zend-abi) = %{php_zend_api}
 Requires:     php(api) = %{php_core_api}
 %{?with_msgpack:Requires: %{php}-msgpack%{?_isa}}
 
-# provide the stock name
-Provides:     php-pecl-%{pecl_name} = %{version}
-Provides:     php-pecl-%{pecl_name}%{?_isa} = %{version}
-
 # provide the stock and IUS names without pecl
 Provides:     php-%{pecl_name} = %{version}
 Provides:     php-%{pecl_name}%{?_isa} = %{version}
@@ -69,8 +65,10 @@ Provides:     php-pecl(%{pecl_name})%{?_isa} = %{version}
 Provides:     %{php}-pecl(%{pecl_name}) = %{version}
 Provides:     %{php}-pecl(%{pecl_name})%{?_isa} = %{version}
 
-# conflict with the stock name
-Conflicts:    php-pecl-%{pecl_name} < %{version}
+# safe replacement
+Provides:     php-pecl-%{pecl_name} = %{version}-%{release}
+Provides:     php-pecl-%{pecl_name}%{?_isa} = %{version}-%{release}
+Conflicts:    php-pecl-%{pecl_name} < %{version}-%{release}
 
 %{?filter_provides_in: %filter_provides_in %{php_extdir}/.*\.so$}
 %{?filter_provides_in: %filter_provides_in %{php_ztsextdir}/.*\.so$}
@@ -277,6 +275,9 @@ fi
 
 
 %changelog
+* Tue Jul 02 2019 Carl George <carl@george.computer> - 3.1.3-1
+- Latest upstream
+
 * Thu Feb 01 2018 Carl George <carl@george.computer> - 3.0.4-2.ius
 - Remove pear requirement and update scriptlets (adapted from remirepo)
 
