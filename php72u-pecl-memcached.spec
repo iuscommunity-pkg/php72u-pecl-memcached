@@ -210,7 +210,7 @@ ret=0
 
 : Launch the Memcached service
 port=$(%{__php} -r 'echo 10000 + PHP_MAJOR_VERSION*100 + PHP_MINOR_VERSION*10 + PHP_INT_SIZE;')
-memcached -p $port -U $port      -d -P $PWD/memcached.pid
+memcached -u memcached -p $port -U $port -d -P $PWD/memcached.pid
 sed -e "s/11211/$port/" -i ?TS/tests/*
 
 : Run the upstream test Suite for NTS extension
