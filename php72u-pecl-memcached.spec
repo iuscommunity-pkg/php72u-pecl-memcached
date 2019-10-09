@@ -20,7 +20,7 @@
 
 Summary:      Extension to work with the Memcached caching daemon
 Name:         %{php}-pecl-%{pecl_name}
-Version:      3.1.3
+Version:      3.1.4
 Release:      1%{?dist}
 License:      PHP
 URL:          https://pecl.php.net/package/%{pecl_name}
@@ -270,6 +270,9 @@ fi
 
 
 %changelog
+* Wed Oct 09 2019 Carl George <carl@george.computer> - 3.1.4-1
+- Latest upstream
+
 * Tue Jul 02 2019 Carl George <carl@george.computer> - 3.1.3-1
 - Latest upstream
 - Switch from pear1u to pear1
